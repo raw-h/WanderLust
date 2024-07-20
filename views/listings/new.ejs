@@ -1,48 +1,67 @@
 <!-- This is the form that will be rendered whenever a new listing is to be listed on our site. -->
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WanderLust: Add Listing</title>
-  </head>
-  <body>
-    <h4>Create A New Listing</h4>
+
+<%layout("/layouts/boilerplate.ejs")%>
+<div class="row">
+  <div class="col-8 offset-2">
+    <br /><br />
+    <h4 class="mb-3">Create A New Listing</h4>
     <form method="POST" action="/listings">
-      <input name="listing[title]" placeholder="Enter Title" type="text" />
-      <br />
-      <br />
-      <textarea
-        name="listing[description]"
-        placeholder="Enter Description"
-        type="text"
-      ></textarea>
-      <br />
-      <br />
-      <input
-        name="listing[image]"
-        placeholder="Enter Image URL/Link"
-        type="text"
-      />
-      <br />
-      <br />
-      <input name="listing[price]" placeholder="Enter Price" type="number" />
-      <br />
-      <br />
-      <input
-        name="listing[location]"
-        placeholder="Enter Location"
-        type="text"
-      />
-      <br />
-      <br />
-      <input name="listing[country]" placeholder="Enter Country" type="text" />
-      <br />
-      <br />
-      <button>Add</button>
+      <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <input
+          name="listing[title]"
+          placeholder="Title for your place"
+          type="text"
+          class="form-control"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea
+          name="listing[description]"
+          type="text"
+          placeholder="This place is very..."
+          class="form-control"
+        ></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="image" class="form-label">Image URL/Link</label>
+        <input name="listing[image]" type="text" class="form-control" />
+      </div>
+      <div class="mb-3">
+        <label for="price" class="form-label">Price</label>
+        <input
+          name="listing[price]"
+          placeholder="1200"
+          type="number"
+          class="form-control"
+        />
+      </div>
+      <div class="row">
+        <div class="mb-3 col-md-8">
+          <label for="location" class="form-label">Location</label>
+          <input
+            name="listing[location]"
+            placeholder="Jaipur, Rajasthan"
+            type="text"
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3 col-md-4">
+          <label for="country" class="form-label">Coutry</label>
+          <input
+            name="listing[country]"
+            placeholder="India"
+            type="text"
+            class="form-control"
+          />
+        </div>
+      </div>
+      <button class="btn btn-dark add-btn">Add</button>
+      <br /><br />
     </form>
-  </body>
-</html>
+  </div>
+</div>
 
 <!-- We created each field as a key to the listing object, and the values to those key will be the values that are entered by the user.
  This is done so that data extraction after form submission is easier. -->

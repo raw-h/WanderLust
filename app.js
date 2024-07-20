@@ -4,11 +4,13 @@ const app = express();
 const mongoose = require("mongoose");
 const Listing = require("./models/listing.js");
 const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
+app.use(express.static(path.join(__dirname, "/public")));
 
 main()
   .then()
@@ -23,7 +25,16 @@ async function main() {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+app.engine("ejs", ejsMate);
+
 app.listen(8080);
+
+
+// Root Route
+/* This is the root directory or route of our project. */
+app.get("/", (req,res) => {
+  res.send("This is the root page");
+});
 
 // Index Route
 /* Here we are creating the index or the first page of our site, where all the listings will be shown, we take all the listings from the db
