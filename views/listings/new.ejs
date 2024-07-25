@@ -5,7 +5,7 @@
   <div class="col-8 offset-2">
     <br /><br />
     <h4 class="mb-3">Create A New Listing</h4>
-    <form method="POST" action="/listings">
+    <form method="POST" action="/listings" novalidate class="needs-validation">
       <div class="mb-3">
         <label for="title" class="form-label">Title</label>
         <input
@@ -13,7 +13,10 @@
           placeholder="Title for your place"
           type="text"
           class="form-control"
+          required
         />
+        <div class="valid-feedback">Title looks good!</div>
+        <div class="invalid-feedback">Please enter a Title!</div>
       </div>
       <div class="mb-3">
         <label for="description" class="form-label">Description</label>
@@ -22,7 +25,10 @@
           type="text"
           placeholder="This place is very..."
           class="form-control"
+          required
         ></textarea>
+        <div class="valid-feedback">Description looks good!</div>
+        <div class="invalid-feedback">Please enter a valid Description!</div>
       </div>
       <div class="mb-3">
         <label for="image" class="form-label">Image URL/Link</label>
@@ -35,7 +41,10 @@
           placeholder="1200"
           type="number"
           class="form-control"
+          required
         />
+        <div class="valid-feedback">Price looks good!</div>
+        <div class="invalid-feedback">Please enter a valid Price!</div>
       </div>
       <div class="row">
         <div class="mb-3 col-md-8">
@@ -45,7 +54,10 @@
             placeholder="Jaipur, Rajasthan"
             type="text"
             class="form-control"
+            required
           />
+          <div class="valid-feedback">Location is entered!</div>
+          <div class="invalid-feedback">Please enter a valid Location!</div>
         </div>
         <div class="mb-3 col-md-4">
           <label for="country" class="form-label">Coutry</label>
@@ -54,7 +66,10 @@
             placeholder="India"
             type="text"
             class="form-control"
+            required
           />
+          <div class="valid-feedback">Country is entered!</div>
+          <div class="invalid-feedback">Please enter a valid Country!</div>
         </div>
       </div>
       <button class="btn btn-dark add-btn">Add</button>
@@ -65,3 +80,10 @@
 
 <!-- We created each field as a key to the listing object, and the values to those key will be the values that are entered by the user.
  This is done so that data extraction after form submission is easier. -->
+
+<!-- We have used the required keyword for Form Validation(on client side). By using the required keyword we get the default implementation 
+ for required fields which is most of the times browser dependent, for chrome we may get a different message, for brave we may get a 
+ different one and for safari we may get a different one. But to have a uniform styling and message across all platforms we use bootstrap 
+ for giving custom styling, because a standardisation is already set in bootstrap. For that we have to add novalidate in our form tag to 
+ remove the default implementations, the styling by Bootstrap has been added via a JS file, which is created inside the script folder within the
+ public folder-->
