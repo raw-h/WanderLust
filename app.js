@@ -7,7 +7,8 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressErrors.js");
-const { listingSchema } = require("./schema.js");
+const { listingSchema, reviewSchema } = require("./schema.js");
+const Review = require("./models/review.js");
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
@@ -46,6 +47,20 @@ const validateListing = (req, res, next) => {
     For each element of the detail object inside error we are returning it's message, and we are joining all of those error messages using
     join function with the separator ","
     */
+    throw new ExpressError(400, errMsg);
+  } else {
+    next();
+  }
+};
+
+/*
+  Here we have created a function validateReview that will be passed as a middleware, and it's work is to validate the reviews for our listings
+  on the serverside, and make sure that they are not empty.
+*/
+const validateReview = (req, res, next) => {
+  let { error } = reviewSchema.validate(req.body);
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
     throw new ExpressError(400, errMsg);
   } else {
     next();
@@ -115,7 +130,7 @@ app.get(
   "/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
   })
 );
@@ -167,9 +182,44 @@ app.delete(
 
 /* 
 We had to put our New Route above our Show Route because in Show Route we obtain a get request that contains an id as it's parameters, but if
-we had our New Route below the SHow Route then the /new in the New Route's get request would've been searched in the database as in id, and
+we had our New Route below the Show Route then the /new in the New Route's get request would've been searched in the database as in id, and
 hence having New below Show Route would've thrown an error.
 */
+
+// Reviews
+/*
+Since we have created reviews for each listing, which makes it a One to Many relation from the Listing to Reviews so the route for each review
+must go through a listing id, and hence the route is of the following kind:- /listings/:id/reviews. We have passed our validateReview function
+as a middleware to validate our reviews for the serverside and we have wrapped the function in wrapAsync so that error handling could be done
+properly.
+*/
+
+// Post Review Route
+app.post(
+  "/listings/:id/reviews",
+  validateReview,
+  wrapAsync(async (req, res) => {
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+    res.redirect(`/listings/${listing._id}`);
+  })
+);
+
+// Delete Review Route
+app.delete(
+  "/listings/:id/reviews/:reviewId",
+  wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/listings/${id}`);
+  })
+);
 
 /*This is a standard respose which will be generated when none of the above paths are matched with the incoming requests, then the following
 response/error will be generated. * means for all the incoming requests that have not been matched. */

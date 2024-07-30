@@ -16,6 +16,7 @@ The model will have the following informations:-
 
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const Review = require("./review.js");
 
 const listingSchema = new Schema({
   title: {
@@ -32,6 +33,26 @@ const listingSchema = new Schema({
   price: Number,
   location: String,
   country: String,
+  /*
+  Reviews is an array, which will store objects, and those objects will be of type ObjectId, and the reference will be Review schema. 
+  */
+  reviews: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Review",
+    },
+  ],
+});
+
+/*
+We have our post mongoose middleware which we are using to achieve cascading delete for the case where we delete a listing, and we want all
+the reviews related to it to get deleted by themselves, this middleware will work on findOneAndDelete, and the async function in it will take
+the listing as it's data 
+*/
+listingSchema.post("findOneAndDelete", async (listing) => {
+  if (listing) {
+    await Review.deleteMany({ _id: { $in: listing.reviews } });
+  }
 });
 
 const Listing = mongoose.model("Listing", listingSchema);
