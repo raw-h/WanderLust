@@ -2,13 +2,11 @@ const express = require("express");
 const path = require("path");
 const app = express();
 const mongoose = require("mongoose");
-const Listing = require("./models/listing.js");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressErrors.js");
-const { listingSchema, reviewSchema } = require("./schema.js");
-const Review = require("./models/review.js");
+const listings = require("./routes/listing.js"); //Requiring listing.js which contains all the request routes for our listing.
+const reviews = require("./routes/review.js"); //Requiring listing.js which contains all the request routes for our listing.
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
@@ -33,193 +31,20 @@ app.engine("ejs", ejsMate);
 
 app.listen(8080);
 
+app.use("/listings", listings); //A middleware, which matches all the requests for "/listings" with the second parameter i.e listings
+app.use("/listings/:id/reviews", reviews); //A middleware, which matches all the requests for "/reviews" with the reviews
 /*
-  Here we have created a function validateListing that will be passed as a middleware, it is created using our listingSchema created using Joi for 
-  validating our server side schema, because even though we have validated our client side form but still we need to add a layer of validation 
-  on the server side. Our listingSchema is validating each and every field of the listing object that goes to the server with the post request.
+  In the above middleware for reviews, it won't send any id in the parameter, this is because, the id parameter on which the request is sent 
+  gets left behind in this(app.js) file itself, and only the parameters that are after the(/listings/:id/reviews) path are sent to the
+  (review.js) file in routes folder. To make sure that the id parameter doesn't get stuck in the file, and the parameters of parent route gets 
+  attached to the child route we use the option mergeParams, where we have used the Router object in the top of our file.
 */
-const validateListing = (req, res, next) => {
-  let { error } = listingSchema.validate(req.body);
-  if (error) {
-    // There are a lot of details associated with our errors, inside the details object of an error, we can extract them using the line below.
-    let errMsg = error.details.map((el) => el.message).join(",");
-    /*
-    For each element of the detail object inside error we are returning it's message, and we are joining all of those error messages using
-    join function with the separator ","
-    */
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
-
-/*
-  Here we have created a function validateReview that will be passed as a middleware, and it's work is to validate the reviews for our listings
-  on the serverside, and make sure that they are not empty.
-*/
-const validateReview = (req, res, next) => {
-  let { error } = reviewSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
 
 // Root Route
 /* This is the root directory or route of our project. */
 app.get("/", (req, res) => {
   res.send("This is the root page");
 });
-
-// Index Route
-/* Here we are creating the index or the first page of our site, where all the listings will be shown, we take all the listings from the db
-and store it in a variable called allListings and then the index.ejs template is rendered where values from that variable are used. */
-app.get(
-  "/listings",
-  wrapAsync(async (req, res) => {
-    const allListings = await Listing.find({});
-    res.render("listings/index.ejs", { allListings });
-  })
-);
-
-// Create (C operation in CRUD)
-/* Here we will follow a 2 step approach for creating a listing and inserting it in database.
-    1. We will send a GET request to the New Route i.e /listings/new which will render a form for us and after entering the asked data, we
-    will submit it.
-    2. And that submission will send a POST request to the Create Route i.e /listings where the data insertion in the database will happen.
-*/
-
-// New Route
-app.get("/listings/new", (req, res) => {
-  res.render("listings/new.ejs");
-});
-// Create Route
-app.post(
-  "/listings",
-  validateListing, //Passing the function for server side schema validation as a middleware
-  wrapAsync(async (req, res, next) => {
-    // Enclosing the await code in a try catch block is one of the ways to handle errors after implementing a error handling middleware.
-    // try {
-    //   const newListing = new Listing(req.body.listing);
-    //   await newListing.save();
-    //   res.redirect("/listings");
-    // } catch (err) {
-    //   next(err);
-    // }
-
-    // if (!req.body.listing) {
-    //   throw new ExpressError(400, "Send valid data for listing!");
-    //   // Here if the listing comes empty from client side then this error will be thrown, saying it was a bad request,
-    //   // and the above message will be displayed.
-    // }
-    const newListing = new Listing(req.body.listing);
-    await newListing.save();
-    res.redirect("/listings");
-    /* 
-  The creation of object with key value pairs while taking values from user for new listing helps us in shortening the syntax for data
-  extraction at this point. The data is obtained in the format of a JS object with the name of listing and it has required key value pairs.
-  */
-  })
-);
-
-// Show Route (R operation in CRUD)
-/* This route is used to show all the data related to one listing among all the listings.*/
-app.get(
-  "/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id).populate("reviews");
-    res.render("listings/show.ejs", { listing });
-  })
-);
-
-// Update (U operation in CRUD)
-/* Similar to create here also we will follow a 2 step approach for editing a listing in database.
-    1. We will send a GET request to the Edit Route i.e /listings/:id/edit which will render a form for us and after making the edits, we
-    will submit it.
-    2. And that submission will send a POST request to the Update Route i.e /listings/:id where the data updation in the database will happen.
-*/
-
-// Edit Route
-app.get(
-  "/listings/:id/edit",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id);
-    res.render("listings/edit.ejs", { listing });
-  })
-);
-// update Route
-app.put(
-  "/listings/:id",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    // if (!req.body.listing) {
-    //   throw new ExpressError(400, "Send valid data for listing!");
-    //   // Here if the listing comes empty from client side then this error will be thrown, saying it was a bad request,
-    //   // and the above message will be displayed.
-    // }
-    let { id } = req.params;
-    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
-    res.redirect(`/listings/${id}`);
-  })
-);
-
-// Delete Route (D operation in CRUD)
-/*
-We will have a Delete request on the route /listings/:id and the listing with the requested id will be deleted and removed from the DB.
-*/
-app.delete(
-  "/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    let deletedListing = await Listing.findByIdAndDelete(id);
-    res.redirect("/listings");
-  })
-);
-
-/* 
-We had to put our New Route above our Show Route because in Show Route we obtain a get request that contains an id as it's parameters, but if
-we had our New Route below the Show Route then the /new in the New Route's get request would've been searched in the database as in id, and
-hence having New below Show Route would've thrown an error.
-*/
-
-// Reviews
-/*
-Since we have created reviews for each listing, which makes it a One to Many relation from the Listing to Reviews so the route for each review
-must go through a listing id, and hence the route is of the following kind:- /listings/:id/reviews. We have passed our validateReview function
-as a middleware to validate our reviews for the serverside and we have wrapped the function in wrapAsync so that error handling could be done
-properly.
-*/
-
-// Post Review Route
-app.post(
-  "/listings/:id/reviews",
-  validateReview,
-  wrapAsync(async (req, res) => {
-    let listing = await Listing.findById(req.params.id);
-    let newReview = new Review(req.body.review);
-
-    listing.reviews.push(newReview);
-
-    await newReview.save();
-    await listing.save();
-    res.redirect(`/listings/${listing._id}`);
-  })
-);
-
-// Delete Review Route
-app.delete(
-  "/listings/:id/reviews/:reviewId",
-  wrapAsync(async (req, res) => {
-    let { id, reviewId } = req.params;
-    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
-    await Review.findByIdAndDelete(reviewId);
-    res.redirect(`/listings/${id}`);
-  })
-);
 
 /*This is a standard respose which will be generated when none of the above paths are matched with the incoming requests, then the following
 response/error will be generated. * means for all the incoming requests that have not been matched. */
